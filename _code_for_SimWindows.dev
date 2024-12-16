@@ -1,0 +1,52 @@
+# p-contact   d=0.3      x=0.0    doping=5e+19    a  points=200   bulk
+# p-emitter   d=0.7      x=0.6    doping=1.5e+18  a  points=800   bulk
+# p-emitter   d=0.1      x=0.6    doping=1e+17    a  points=200   bulk
+# p-wave      d=0.2      x=0.37   doping=1e+17    a  points=200   bulk
+# p-wave      d=0.1      x=0.37   doping=3e+16    a  points=200   bulk
+# barrier     d=0.019    x=0.2    doping=2e+16    a  points=150   bulk
+# QW          d=0.01     x=0.04   doping=2e+16    a  points=100   qw
+# barrier     d=0.019    x=0.2    doping=2e+16    d  points=150   bulk
+# n-wave      d=0.5      x=0.37   doping=1e+17    d  points=400   bulk
+# n-emitter   d=1.0      x=0.5    doping=2e+18    d  points=800   bulk
+# n-contact   d=0.3      x=0.0    doping=2e+18    d  points=800   bulk
+# d_HS=3.248
+
+grid length=0.3 points=200
+grid length=0.7 points=800
+grid length=0.1 points=200
+grid length=0.2 points=200
+grid length=0.1 points=200
+grid length=0.019 points=150
+grid length=0.01 points=100
+grid length=0.019 points=150
+grid length=0.5 points=400
+grid length=1.0 points=800
+grid length=0.3 points=800
+
+structure material=M1 length=0.3
+structure material=M2 length=0.7
+structure material=M3 length=0.1
+structure material=M4 length=0.2
+structure material=M5 length=0.1
+structure material=M6 length=0.019
+region bulk length=1.419
+structure material=M7 length=0.01
+region qw length=0.01
+structure material=M8 length=0.019
+structure material=M9 length=0.5
+structure material=M10 length=1.0
+structure material=M11 length=0.3
+region bulk length=1.819
+
+doping length=0.3 Na=5e+19
+doping length=0.7 Na=1.5e+18
+doping length=0.1 Na=1e+17
+doping length=0.2 Na=1e+17
+doping length=0.1 Na=3e+16
+doping length=0.019 Na=2e+16
+doping length=0.01 Na=2e+16
+doping length=0.019 Nd=2e+16
+doping length=0.5 Nd=1e+17
+doping length=1.0 Nd=2e+18
+doping length=0.3 Nd=2e+18
+
