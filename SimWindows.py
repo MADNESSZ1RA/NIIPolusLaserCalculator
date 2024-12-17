@@ -339,6 +339,9 @@ class Heterostructure:
         self.a_i = tuple(a_i)
 
     def print_ai(self):
+        """
+        Генерирует данные для ai гистограммы и возвращает их для записи в Excel.
+        """
         print('_______________________ai_______________________')
         alpha_i_n = sum(map(lambda x: x[1], self.a_i))
         alpha_i_p = sum(map(lambda x: x[2], self.a_i))
@@ -347,31 +350,34 @@ class Heterostructure:
         print('alpha_i =   ', round(alpha_i_p + alpha_i_n, 5), 'cm-1')
         print()
 
-        print('              n       p       n+p')
-        #ai_n = []
-        #ai_p = []
+        ai_data_n = []  # Список для таблицы n
+        ai_data_p = []  # Список для таблицы p
+        ai_data_np = []  # Список для таблицы n+p
+
         ans_n = 0.0
         ans_p = 0.0
         counts = 0
         d = 0.0
         for j in range(len(self.HS)):
             d += self.HS[j][1]
-            #print(d)
             for i in itertools.count(counts):
-                #print(i)
-                if (self.a_i[i][0] <= d) and (i < len(self.a_i)-1):
+                if (self.a_i[i][0] <= d) and (i < len(self.a_i) - 1):
                     ans_n += self.a_i[i][1]
                     ans_p += self.a_i[i][2]
                 else:
                     counts = i
-                    #print(i)
-                    #ai_n.append(ans_n)
-                    #ai_p.append(ans_p)
-                    print('{:10}  {:5}  {:5}  {:5}'.format(self.HS[j][0], round(ans_n, 5), round(ans_p, 5), round(ans_n + ans_n, 5)))
+                    layer_name = self.HS[j][0]
+                    ai_data_n.append([layer_name, round(ans_n, 5)])
+                    ai_data_p.append([layer_name, round(ans_p, 5)])
+                    ai_data_np.append([layer_name, round(ans_n + ans_p, 5)])
+                    print('{:10}  {:5}  {:5}  {:5}'.format(layer_name, round(ans_n, 5), round(ans_p, 5),
+                                                           round(ans_n + ans_p, 5)))
                     ans_n = 0.0
                     ans_p = 0.0
                     break
+
         print('______________________________________________')
+        return ai_data_n, ai_data_p, ai_data_np
 
     # расчет последовательного сопротивления
     def calculate_ros(self):

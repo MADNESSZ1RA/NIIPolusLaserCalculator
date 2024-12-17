@@ -126,11 +126,6 @@ class App(Ctk.CTk):
 
     def RsCalculator(self):
         HS = SimHS(os.path.split(__file__)[0] + '\\_HS.txt')
-        HS.load_carriers_conc()
-        HS.load_near_field()
-        HS.calculate_ai()
-        HS.print_ai()
-
         HS.calculate_ros()
         HS.print_ros()
         HS.load_carriers_conc()
@@ -138,8 +133,6 @@ class App(Ctk.CTk):
         HS.calculate_ai()
         HS.print_ai()
 
-        HS.calculate_ros()
-        HS.print_ros()
 
     def RsCalculatorWithGist(self):
         HS = SimHS(os.path.split(__file__)[0] + '\\_HS.txt')
