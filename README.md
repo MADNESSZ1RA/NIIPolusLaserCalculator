@@ -14,7 +14,7 @@
 3. При необходимости, перезапустить среду разработки
 4. Установить все библиотеки командой
 
-    ```pip install requirements.txt```
+    ```pip install -r requirements.txt```
 
 5. Запустить файл visual.py командой
 
