@@ -1,75 +1,90 @@
-import matplotlib.pyplot as plt
 import openpyxl
-from openpyxl.drawing.image import Image
-
+from openpyxl.chart import BarChart, Reference
+import os
 
 class HistogramGenerator:
     def __init__(self, heterostructure):
         self.heterostructure = heterostructure
 
+    def format_number(self, value):
+        """Форматирует числа с использованием E в обычный вид."""
+        if isinstance(value, (int, float)):
+            return float(f"{value:.10f}")  # Убирает e и преобразует число
+        return float(value)
+
     def extract_data_from_ai(self):
-        alpha_i_data = {}
-        alpha_i_n = sum(map(lambda x: x[1], self.heterostructure.a_i))
-        alpha_i_p = sum(map(lambda x: x[2], self.heterostructure.a_i))
-        total_alpha_i = alpha_i_n + alpha_i_p
+        """
+        Извлекает данные из функции print_ai для записи в Excel.
+        Создает отдельные списки для n, p и n+p.
+        """
+        alpha_i_data_n = []
+        alpha_i_data_p = []
+        alpha_i_data_np = []
 
-        alpha_i_data["alpha_i_n"] = alpha_i_n
-        alpha_i_data["alpha_i_p"] = alpha_i_p
-        alpha_i_data["alpha_i_total"] = total_alpha_i
-
+        counts = 0
         for layer in self.heterostructure.HS:
             layer_name = layer[0]
-            n_sum = sum(ai[1] for ai in self.heterostructure.a_i if ai[0] <= layer[1])
-            p_sum = sum(ai[2] for ai in self.heterostructure.a_i if ai[0] <= layer[1])
-            alpha_i_data[layer_name] = n_sum + p_sum
+            layer_thickness = layer[1]
+            n_sum = 0.0
+            p_sum = 0.0
+            while counts < len(self.heterostructure.a_i) and self.heterostructure.a_i[counts][0] <= layer_thickness:
+                n_sum += self.format_number(self.heterostructure.a_i[counts][1])
+                p_sum += self.format_number(self.heterostructure.a_i[counts][2])
+                counts += 1
 
-        return alpha_i_data
+            alpha_i_data_n.append([layer_name, n_sum])
+            alpha_i_data_p.append([layer_name, p_sum])
+            alpha_i_data_np.append([layer_name, n_sum + p_sum])
+        return alpha_i_data_n, alpha_i_data_p, alpha_i_data_np
 
-    def extract_data_from_ros(self):
+    def extract_data_from_rs(self):
         """
-        Извлекает данные из функции print_ros для создания гистограммы.
+        Извлекает данные из функции print_rs для записи в Excel.
+        Значения преобразуются из E-нотации в обычный вид.
         """
-        ros_data = {}
+        rs_data = []
         total_resistance = sum(self.heterostructure.ro_i)
-        ros_data["Rs_total"] = total_resistance
+        rs_data.append(["Rs_total", self.format_number(total_resistance)])
 
         for i, layer in enumerate(self.heterostructure.HS):
-            ros_data[layer[0]] = self.heterostructure.ro_i[i]
+            rs_data.append([layer[0], self.format_number(self.heterostructure.ro_i[i])])
 
-        return ros_data
+        return rs_data
 
-    def save_histogram_to_excel(self, data, sheet_name, output_excel):
+    def save_data_to_excel(self, data, sheet_name, output_excel):
+        # Создание Excel файла
+        if os.path.exists(output_excel):
+            wb = openpyxl.load_workbook(output_excel)
+        else:
+            wb = openpyxl.Workbook()
+            wb.remove(wb.active)
+
+        if sheet_name in wb.sheetnames:
+            ws = wb[sheet_name]
+        else:
+            ws = wb.create_sheet(title=sheet_name)
+
+        # Запись данных в Excel
+        ws.append(["Элемент", "Значение"])
+        for row in data:
+            ws.append(row)
+
         # Создание гистограммы
-        labels = data.keys()
-        values = data.values()
+        chart = BarChart()
+        chart.title = f"Гистограмма {sheet_name}"
+        chart.x_axis.title = "Элемент"
+        chart.y_axis.title = "Значение"
 
-        plt.figure(figsize=(10, 6))
-        plt.bar(labels, values, color='blue')
-        plt.xlabel('Элементы', fontsize=12)
-        plt.ylabel('Значения', fontsize=12)
-        plt.title(f'Гистограмма {sheet_name}', fontsize=14)
-        plt.xticks(rotation=45, ha='right')
-        plt.tight_layout()
+        data_range = Reference(ws, min_col=2, min_row=2, max_row=ws.max_row)
+        labels = Reference(ws, min_col=1, min_row=2, max_row=ws.max_row)
+        chart.add_data(data_range, titles_from_data=False)
+        chart.set_categories(labels)
 
-        # Сохранение гистограммы как изображения
-        histogram_path = f"{sheet_name}.png"
-        plt.savefig(histogram_path)
-        plt.close()
-
-        # Создание Excel файла и добавление изображения
-        wb = openpyxl.Workbook()
-        ws = wb.active
-        ws.title = sheet_name
-
-        # Добавление изображения на лист
-        img = Image(histogram_path)
-        img.anchor = 'A1'
-        ws.add_image(img)
+        ws.add_chart(chart, "E5")
 
         # Сохранение Excel файла
         wb.save(output_excel)
-        print(f"Гистограмма сохранена в файл: {output_excel}")
-
+        print(f"Данные и гистограмма сохранены в файл: {output_excel}")
 
 class RsCalculatorWithGist:
     def __init__(self, sim_hs):
@@ -82,9 +97,14 @@ class RsCalculatorWithGist:
         self.sim_hs.calculate_ai()
         self.sim_hs.calculate_ros()
 
-        ai_data = self.histogram_generator.extract_data_from_ai()
-        ros_data = self.histogram_generator.extract_data_from_ros()
+        # Генерация данных для AI гистограммы
+        self.sim_hs.print_ros()
+        ai_data_n, ai_data_p, ai_data_np = self.sim_hs.print_ai()
+        rs_data = self.histogram_generator.extract_data_from_rs()
 
-        self.histogram_generator.save_histogram_to_excel(ai_data, "AI Гистограмма", "ai_histogram_output.xlsx")
-        self.histogram_generator.save_histogram_to_excel(ros_data, "ROS Гистограмма", "ros_histogram_output.xlsx")
-
+        # Сохранение данных и гистограмм в Excel
+        output_file = "output.xlsx"
+        self.histogram_generator.save_data_to_excel(rs_data, "RS", output_file)
+        self.histogram_generator.save_data_to_excel(ai_data_n, "AI_n", output_file)
+        self.histogram_generator.save_data_to_excel(ai_data_p, "AI_p", output_file)
+        self.histogram_generator.save_data_to_excel(ai_data_np, "AI_n+p", output_file)
